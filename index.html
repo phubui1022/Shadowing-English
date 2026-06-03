@@ -175,8 +175,7 @@ textarea:focus{border-color:var(--blue)}
     <div class="logo">Echo Practice</div>
     <button class="ic-btn" id="setupApiBtn">⚙️</button>
   </div>
-  <input type="file" id="audioInput" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.aac,.mp4,.mov" style="display:none">
-  <input type="file" id="srtInput" accept=".srt,.vtt,.txt" style="display:none">
+  
   <div class="card">
     <div class="card-title">Audio</div>
     <div style="display:flex;gap:8px;margin-bottom:8px">
@@ -185,17 +184,22 @@ textarea:focus{border-color:var(--blue)}
       <button id="loadUrlBtn" style="padding:11px 14px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">Tải</button>
     </div>
     <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:8px">— hoặc —</div>
-    <div class="up-btn" id="pickAudio" style="margin-bottom:8px"><div class="ic">🎵</div><b>Upload từ máy</b><small>MP3, M4A, WAV</small></div>
-    <input type="file" id="audioInput" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.aac,.mp4,.mov" style="display:none">
+    <div class="up-btn" id="pickAudio" style="margin-bottom:8px"><div class="ic">🎵</div><b>Upload từ máy</b><small>Mọi định dạng</small></div>
+    <!-- FIXED: Bỏ giới hạn để iOS không khóa file -->
+    <input type="file" id="audioInput" accept="*/*" style="display:none">
     <div class="chip" id="audioChip"><span id="audioName"></span><span class="x" id="rmAudio">✕</span></div>
   </div>
+  
   <div class="card">
     <div class="card-title">Phụ đề SRT</div>
     <div class="up-row">
-      <div class="up-btn" id="pickSrt"><div class="ic">📄</div><b>Upload SRT</b><small>SRT, VTT, TXT</small></div>
+      <div class="up-btn" id="pickSrt"><div class="ic">📄</div><b>Upload SRT</b><small>Mọi định dạng</small></div>
     </div>
+    <!-- FIXED: Bỏ giới hạn để iOS không khóa file -->
+    <input type="file" id="srtInput" accept="*/*" style="display:none">
     <div class="chip" id="srtChip"><span id="srtName"></span><span class="x" id="rmSrt">✕</span></div>
   </div>
+  
   <div class="card">
     <div class="card-title">Transcript</div>
     <textarea id="txInput" placeholder="Paste transcript vào đây, hoặc upload SRT ở trên..."></textarea>
@@ -321,7 +325,7 @@ window.addEventListener('load',()=>{
   audio.ontimeupdate=onTick;
   audio.onloadedmetadata=()=>$('waveTime').textContent=`0:00 / ${fmt(audio.duration)}`;
 
-  // TỰ ĐỘNG LOAD LOCAL FILES CHO NETLIFY
+  // TỰ ĐỘNG LOAD LOCAL FILES (Tùy chọn)
   fetch('sub.srt').then(r => r.ok ? r.text() : Promise.reject())
     .then(txt => {
       const p = parseSRT(txt);
@@ -331,7 +335,6 @@ window.addEventListener('load',()=>{
         $('srtName').textContent = 'sub.srt';
         $('srtChip').classList.add('show');
 
-        // CHÚ Ý: Mặc định load audio.m4a để chạy chuẩn trên iPhone
         audio.src = 'audio.m4a';
         cleanAudioSrc = 'audio.m4a';
         $('audioName').textContent = 'audio.m4a';
@@ -341,9 +344,7 @@ window.addEventListener('load',()=>{
         toast('Đã tìm thấy bài học! Hãy dùng file audio.m4a để chạy mượt nhất.', 'g');
       }
     })
-    .catch(() => {
-      console.log("No local files found.");
-    });
+    .catch(() => {});
 });
 
 // ── API ──
@@ -387,7 +388,6 @@ function onSrtFile(e){
   r.readAsText(f,'UTF-8');
 }
 
-// Hàm Parse SRT viết lại cực chặt chẽ để loại bỏ mọi ký tự tàng hình gây lệch thời gian
 function parseSRT(txt){
   const res=[];
   txt.replace(/\r\n/g,'\n').trim().split(/\n\n+/).forEach(blk=>{
@@ -436,12 +436,11 @@ function buildUI(){
   const pills=$('pillRow'),cards=$('cards');
   pills.innerHTML='';cards.innerHTML='';
   S.forEach((s,i)=>{
-    // pill
     const p=document.createElement('div');
     p.className='pill';p.textContent=i+1;p.dataset.i=i;
     p.addEventListener('click',()=>select(i,true));
     pills.appendChild(p);
-    // card
+    
     const c=document.createElement('div');
     c.className='scard';c.id='sc'+i;c.dataset.i=i;
     const ts=s.start!==null?`<span class="ts">${fmt(s.start)}</span>`:'';
@@ -458,7 +457,6 @@ function buildUI(){
         <div class="recplay" id="rp${i}">▶ Your Recording</div>
         <div class="schips" id="chips${i}"></div>
       </div>`;
-    // Events — attached here, NOT inline
     c.querySelector('.cplay').addEventListener('click',e=>{e.stopPropagation();playSeg(i)});
     c.querySelector('.creplay').addEventListener('click',e=>{e.stopPropagation();playSeg(i)});
     c.querySelector('.cai').addEventListener('click',e=>{e.stopPropagation();openAI(i)});
@@ -475,13 +473,10 @@ function words(text,idx){
 function select(i,autoPlay=true){
   if(i<0||i>=S.length)return;
   cur=i;
-  // pills
   document.querySelectorAll('.pill').forEach((p,j)=>{p.classList.toggle('on',j===i);if(j===i)p.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'})});
-  // cards
   document.querySelectorAll('.scard').forEach((c,j)=>c.classList.toggle('on',j===i));
   const card=document.getElementById('sc'+i);
   if(card)setTimeout(()=>card.scrollIntoView({block:'nearest',behavior:'smooth'}),50);
-  // AI text
   $('aiSelText').textContent=S[i].text;
   if(autoPlay)playSeg(i);
 }
@@ -510,9 +505,7 @@ function playSeg(i){
   };
 
   const attemptPlay = () => {
-    // Đặt lại thời gian cực kỳ dứt khoát
     audio.currentTime = s.start;
-    
     audio.onseeked=function(){
       audio.onseeked=null;
       audio.play().then(()=>{
@@ -520,8 +513,6 @@ function playSeg(i){
         startStop();
       }).catch(()=>{});
     };
-
-    // Fallback nếu sự kiện onseeked không chạy
     setTimeout(()=>{
       if(audio.onseeked){
         audio.onseeked=null;
@@ -570,7 +561,6 @@ function onTick(){
   const pct=d?(c/d)*100:0;
   $('wprog').style.width=pct+'%';
   document.querySelectorAll('.wb').forEach((b,i,a)=>b.classList.toggle('p',i<Math.floor((pct/100)*a.length)));
-  // Auto-highlight in 'all' mode
   if(srtData.length&&playMode==='all'&&!stopTimer){
     const idx=srtData.findIndex(s=>c>=s.start&&c<=s.end);
     if(idx!==-1&&idx!==cur)select(idx,false);
@@ -622,21 +612,16 @@ function score(userTxt,conf){
   const flu=Math.round((conf||.7)*100);
   const ov=Math.round(acc*.5+flu*.3+com*.2);
   const g=ov>=80?'g':ov>=60?'ok':'bad';
-  // Highlight
   document.querySelectorAll(`[data-i="${cur}"].word`).forEach(el=>{
     el.classList.remove('h','m');
     if(uw.length)el.classList.add(uw.includes(el.dataset.w)?'h':'m');
   });
-  // Badge
   const badge=$('badge'+cur);
   if(badge){badge.className=`badge ${g}`;badge.textContent=`🎙 ${ov}%`}
-  // Card border
   const sc=$('sc'+cur);
   if(sc){sc.classList.remove('g','ok','bad');sc.classList.add(g)}
-  // Pill
   const pill=document.querySelector(`.pill[data-i="${cur}"]`);
   if(pill){pill.classList.add('done');pill.style.cssText+=`;border-color:${g==='g'?'var(--green)':g==='ok'?'#f59e0b':'var(--red)'}`;pill.style.color=g==='g'?'var(--green)':g==='ok'?'#b45309':'var(--red)'}
-  // Chips
   const ch=$('chips'+cur);
   if(ch)ch.innerHTML=`<span class="schip">Acc ${acc}%</span><span class="schip">Flu ${flu}%</span><span class="schip">Com ${com}%</span><span class="schip" style="font-style:italic">"${userTxt}"</span>`;
   const rr=$('rr'+cur);if(rr)rr.classList.add('show');
