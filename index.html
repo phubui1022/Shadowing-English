@@ -185,8 +185,10 @@ textarea:focus{border-color:var(--blue)}
     </div>
     <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:8px">— hoặc —</div>
     <div class="up-btn" id="pickAudio" style="margin-bottom:8px"><div class="ic">🎵</div><b>Upload từ máy</b><small>Mọi định dạng</small></div>
-    <!-- FIXED: Bỏ giới hạn để iOS không khóa file -->
-    <input type="file" id="audioInput" accept="*/*" style="display:none">
+    
+    <!-- XÓA BỎ HOÀN TOÀN RÀO CẢN ACCEPT -->
+    <input type="file" id="audioInput" style="display:none">
+    
     <div class="chip" id="audioChip"><span id="audioName"></span><span class="x" id="rmAudio">✕</span></div>
   </div>
   
@@ -195,8 +197,10 @@ textarea:focus{border-color:var(--blue)}
     <div class="up-row">
       <div class="up-btn" id="pickSrt"><div class="ic">📄</div><b>Upload SRT</b><small>Mọi định dạng</small></div>
     </div>
-    <!-- FIXED: Bỏ giới hạn để iOS không khóa file -->
-    <input type="file" id="srtInput" accept="*/*" style="display:none">
+    
+    <!-- XÓA BỎ HOÀN TOÀN RÀO CẢN ACCEPT -->
+    <input type="file" id="srtInput" style="display:none">
+    
     <div class="chip" id="srtChip"><span id="srtName"></span><span class="x" id="rmSrt">✕</span></div>
   </div>
   
@@ -295,7 +299,6 @@ window.addEventListener('load',()=>{
   $('rmAudio').onclick=()=>{audio.src='';cleanAudioSrc='';$('audioChip').classList.remove('show');$('audioInput').value=''};
   $('rmSrt').onclick=()=>{srtData=[];$('srtChip').classList.remove('show');$('srtInput').value=''};
   
-  // Mở khoá audio bằng tương tác bấm của người dùng
   $('startBtn').onclick=()=>{
     if(audio.src) {
         try {
@@ -325,7 +328,6 @@ window.addEventListener('load',()=>{
   audio.ontimeupdate=onTick;
   audio.onloadedmetadata=()=>$('waveTime').textContent=`0:00 / ${fmt(audio.duration)}`;
 
-  // TỰ ĐỘNG LOAD LOCAL FILES (Tùy chọn)
   fetch('sub.srt').then(r => r.ok ? r.text() : Promise.reject())
     .then(txt => {
       const p = parseSRT(txt);
@@ -334,17 +336,14 @@ window.addEventListener('load',()=>{
         $('txInput').value = p.map(x => x.text).join('\n');
         $('srtName').textContent = 'sub.srt';
         $('srtChip').classList.add('show');
-
         audio.src = 'audio.m4a';
         cleanAudioSrc = 'audio.m4a';
         $('audioName').textContent = 'audio.m4a';
         $('audioChip').classList.add('show');
         $('waveTitle').textContent = 'Audio Practice';
-
         toast('Đã tìm thấy bài học! Hãy dùng file audio.m4a để chạy mượt nhất.', 'g');
       }
-    })
-    .catch(() => {});
+    }).catch(() => {});
 });
 
 // ── API ──
